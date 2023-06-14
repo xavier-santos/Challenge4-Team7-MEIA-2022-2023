@@ -1,7 +1,6 @@
 from spade.agent import Agent
-from spade.behaviour import CyclicBehaviour
+from spade.behaviour import CyclicBehaviour, OneShotBehaviour
 from spade.message import Message
-import time
 
 
 def get_sonar_value():
@@ -15,10 +14,16 @@ def get_sonar_value():
 
 class ParkingSpotModule(Agent):
 
-    def __init__(self, agent_jid, agent_password):
+    def __init__(self, agent_jid, agent_password, manager_jid):
         super().__init__(jid=agent_jid, password=agent_password)
+        self.manager_jid = manager_jid
 
-    class InformBehaviour(CyclicBehaviour):
+    class InformBehaviour(OneShotBehaviour):
+
+        def __init__(self, owner):
+            super().__init__()
+            self.owner = owner
+
         async def run(self):
             # Read sonar sensor value and determine vacancy based on distance in cm
             sonar_value = get_sonar_value()  # Implement your own method to read the sonar sensor value
@@ -27,14 +32,12 @@ class ParkingSpotModule(Agent):
             is_vacant = sonar_value > 100  # Adjust the threshold according to your specific needs
 
             # Create a message to inform the parking spot manager about the vacancy status
-            msg = Message(to="parking_manager@xavi.lan")  # Replace with the appropriate recipient
-            msg.body = "Vacant" if is_vacant else "Occupied"
+            msg = Message(to=self.owner.manager_jid)  # Replace with the appropriate recipient
+            msg.body = "Vacant"
 
             # Send the message
             await self.send(msg)
 
-            time.sleep(5)
-
     async def setup(self):
-        inform_behaviour = self.InformBehaviour()
+        inform_behaviour = self.InformBehaviour(self)
         self.add_behaviour(inform_behaviour)
