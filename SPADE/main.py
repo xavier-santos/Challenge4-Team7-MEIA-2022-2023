@@ -1,65 +1,73 @@
-import threading
+from pydantic import BaseModel
+from fastapi import FastAPI
 import asyncio
-import spade
-import tracemalloc
-from queue import Queue
-from flask import Flask, request, jsonify
 
 from Agents.Driver import Driver
 from Agents.ParkingManager import ParkingManager
 from Agents.ParkingSpotModule import ParkingSpotModule
 from Agents.ParkingZoneManager import ParkingZoneManager
 
-app = Flask(__name__)
-tracemalloc.start()
+app = FastAPI()
 
-# Shared data structure for passing information between threads
-assigned_spot_queue = Queue()
+agents = {}  # to keep track of created agents
 
 
-@app.route("/request-parking-spot", methods=["POST"])
-def request_parking_spot():
-    # Get the driver JID from the request data
-    driver_jid = request.json.get("driver_jid")
-
-    # Create the driver agent
-    driver_agent = create_driver_agent(driver_jid)
-
-    # Start the driver agent in the SPADE thread
-    spade_thread = threading.Thread(target=start_driver_agent, args=(driver_agent,))
-    spade_thread.start()
-
-    # Wait for the assigned spot
-    assigned_spot = assigned_spot_queue.get()  # Blocking until an assigned spot is available
-
-    # Return the assigned spot as a JSON response
-    return jsonify({"assigned_spot": assigned_spot})
+@app.post("/parking_module/{pmodule_id}/{zone_id}")
+async def create_spot(pmodule_id: str, zone_id: str):
+    spot = ParkingSpotModule(f"{pmodule_id}@xavi.lan", "agent_password", f"{zone_id}@xavi.lan")
+    await spot.start()
+    agents[pmodule_id] = spot
+    return {"Agent": pmodule_id, "Status": "Created"}
 
 
-def create_driver_agent(driver_jid):
-    driver = Driver(driver_jid, "password", "parking_manager@xavi.lan")  # Replace with the appropriate password
-    driver.set_assigned_spot_queue(assigned_spot_queue)  # Pass the shared queue to the driver agent
-    return driver
+class ExecuteBehaviourRequest(BaseModel):
+    sonar_value: int
 
 
-def start_driver_agent(driver_agent):
-    asyncio.run(driver_agent.start())
+@app.post("/parking_module/{pmodule_id}")
+async def send_sonar(pmodule_id: str, request: ExecuteBehaviourRequest):
+    sonar_value = request.sonar_value
+    print("potato")
+    if pmodule_id in agents:
+        asyncio.create_task(agents[pmodule_id].execute_behaviour(sonar_value))
+        return {"Agent": pmodule_id, "Behaviour": "OneShotBehaviour Executed"}
+    else:
+        return {"Error": "No such agent exists"}
 
 
-async def main():
-    # Start the SPADE agents
-    parking_manager = ParkingManager("parking_manager@xavi.lan", "password")
-    await parking_manager.start()
-    parking_zone_manager = ParkingZoneManager("parking_zone_manager@xavi.lan", "password", "parking_manager@xavi.lan")
-    await parking_zone_manager.start()
-    parking_spot = ParkingSpotModule("parking_spot_1@xavi.lan", "password", "parking_zone_manager@xavi.lan")
-    await parking_spot.start()
+@app.post("/parking_zone/{zone_id}/{manager_id}")
+async def create_zone(zone_id: str, manager_id: str):
+    zone = ParkingZoneManager(f"{zone_id}@xavi.lan", "agent_password", f"{manager_id}@xavi.lan")
+    await zone.start()
+    agents[zone_id] = zone
+    return {"Agent": zone_id, "Status": "Created"}
+
+
+@app.post("/parking_manager/{manager_id}")
+async def create_zone(manager_id: str):
+    manager = ParkingManager(f"{manager_id}@xavi.lan", "agent_password")
+    await manager.start()
+    agents[manager_id] = manager
+    return {"Agent": manager_id, "Status": "Created"}
+
+
+@app.get("/driver/{driver_id}")
+async def execute_behaviour(driver_id: str):
+    if driver_id in agents:
+        asyncio.create_task(agents[driver_id].execute_behaviour())
+        return {"Agent": driver_id, "Behaviour": "OneShotBehaviour Executed"}
+    else:
+        return {"Error": "No such agent exists"}
+
+
+@app.post("/driver/{driver_id}")
+async def create_driver(driver_id: str):
+    driver = Driver(f"{driver_id}@xavi.lan", "agent_password")
+    await driver.start()
+    agents[driver_id] = driver
+    return {"Agent": driver_id, "Status": "Created"}
 
 
 if __name__ == "__main__":
-    # Create a separate thread for running the SPADE agents
-    spade_thread = threading.Thread(target=lambda: spade.run(main()))
-    spade_thread.start()
-
-    # Start the Flask application in the main thread
-    app.run(port=5000)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
