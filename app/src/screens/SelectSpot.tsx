@@ -10,10 +10,6 @@ interface DestinationProps {
   longitude: number;
 }
 
-interface SelectSpotProps {
-  destination: DestinationProps;
-}
-
 enum Price {
   FREE = 'Free',
   ONE_DOLLAR = '$',
@@ -27,7 +23,7 @@ enum Environment {
   OUTDOOR = 'Outdoor'
 }
 
-export function SelectSpot(){
+export function SelectSpot(props){
   const route = useRoute()
   const { item } = route.params
   const [selectedIndexEnv, setSelectedIndexEnv] = useState(0);
@@ -36,7 +32,14 @@ export function SelectSpot(){
   const buttonsPrice = [Price.FREE, Price.ONE_DOLLAR, Price.TWO_DOLLARS, Price.THREE_DOLLARS];
   
   const handleContinue = () => {
-    // Implemente a lógica de prosseguir aqui
+      //implementar chamada rest
+      const result = {
+        latitude: 41.17796324211171, 
+        longitude: -8.60891994096156,
+        price: 100,
+        environment: 'Outside'
+      }
+      props.navigation.navigate('confirmspot',{result})
   }
 
   return (
