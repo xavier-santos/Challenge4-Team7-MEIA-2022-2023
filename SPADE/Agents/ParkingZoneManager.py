@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
@@ -8,6 +10,9 @@ class ParkingZoneManager(Agent):
         def __init__(self, owner):
             super().__init__()
             self.owner = owner
+            self.last_bid_time = None
+            self.current_high_bid = 0
+            self.current_winner = None
 
         async def run(self):
             # Wait for incoming messages from ParkingSpotModuleController agents
@@ -15,13 +20,35 @@ class ParkingZoneManager(Agent):
 
             if msg:
                 sender_jid = str(msg.sender)
+                vacant_spots = self.owner.find_vacant_parking_spot()
 
                 if msg.body == "Request":
-                    response = self.owner.find_vacant_parking_spot()
-                    response_msg = Message(to=sender_jid)
-                    response_msg.body = response
-                    await self.send(response_msg)
-                else:
+                    # start auction
+                    await self.owner.start_auction(vacant_spots)
+
+                    # response = self.owner.find_vacant_parking_spot()
+                    # response_msg = Message(to=sender_jid)
+                    # response_msg.body = response
+                    # await self.send(response_msg)
+                elif "Bid" in msg.body:
+                    # Process the bid
+                    current_bid = int(msg.body.split()[-1])
+                    print(f"Received bid {current_bid} from {sender_jid}")
+
+                    # Check if the bid is higher than current high bid
+                    if current_bid > self.current_high_bid:
+                        self.current_high_bid = current_bid
+                        self.current_winner = sender_jid
+                        self.last_bid_time = datetime.now()
+
+                        # Increase the bid and ask for new bids
+                        new_bid = current_bid + 1
+                        for jid in vacant_spots:
+                            start_msg = Message(to=jid)
+                            start_msg.body = f"BidRequest {new_bid}"
+                            await self.send(start_msg)
+                # TODO: SELECT WAY TO FINISH THE AUCTION
+                else:  # TODO: ADD MESSAGE TYPE?
                     # Process the message and update the parking spot status
                     vacancy_status = msg.body
 
@@ -44,6 +71,12 @@ class ParkingZoneManager(Agent):
         listen_behaviour = self.ListenBehaviour(self)
         self.add_behaviour(listen_behaviour)
 
+    async def start_auction(self, vacant_spots):
+        for jid in vacant_spots:
+            start_msg = Message(to=jid)
+            start_msg.body = "AuctionStart"
+            await self.send(start_msg)
+
     def update_parking_spot_status(self, parking_module, vacancy_status):
         # Update the parking spot status in the manager's internal data structure (dictionary)
         self.parking_spots[parking_module] = vacancy_status
@@ -58,10 +91,11 @@ class ParkingZoneManager(Agent):
                 vacant_count += 1
         return vacant_count
 
-    def find_vacant_parking_spot(self):
-        # Implement your logic to find a vacant parking spot
-        # Example: Return the first vacant spot found
+    def find_vacant_parking_spots(self):
+        # Implement your logic to find all vacant parking spots
+        # The function now returns a list of all vacant spots
+        vacant_spots = []
         for spot, vacancy in self.parking_spots.items():
             if vacancy == "Vacant":
-                return spot
-        return None
+                vacant_spots.append(spot)
+        return vacant_spots

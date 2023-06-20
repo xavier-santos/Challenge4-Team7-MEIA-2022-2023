@@ -27,6 +27,24 @@ class ParkingSpotModule(Agent):
             # Send the message
             await self.send(msg)
 
+    class BidBehaviour(CyclicBehaviour):
+        async def run(self):
+            msg = await self.receive(timeout=5)
+            if msg:
+                if msg.body == "AuctionStart":
+                    # Send initial bid
+                    bid_msg = Message(to=self.owner.manager_jid)
+                    bid_msg.body = "InitialBid 1"  # Here, 1 is the initial bid value. Adjust as needed.
+                    await self.send(bid_msg)
+                elif "BidRequest" in msg.body:
+                    # Increase bid
+                    current_bid = int(msg.body.split()[-1])
+                    new_bid = current_bid + 1  # Increase the bid by 1. Adjust as needed.
+                    bid_msg = Message(to=self.owner.manager_jid)
+                    bid_msg.body = f"Bid {new_bid}"
+                    await self.send(bid_msg)
+
+    # TODO: GENERATE PRIVATE VALUATION? ADD MAX VALUE?
     async def execute_behaviour(self, sonar_value: int):
         inform_behaviour = self.InformBehaviour(self, sonar_value)
         self.add_behaviour(inform_behaviour)
