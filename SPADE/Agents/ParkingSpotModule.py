@@ -1,5 +1,5 @@
 import asyncio
-from random import random
+import random
 
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, OneShotBehaviour
@@ -23,7 +23,7 @@ class ParkingSpotModule(Agent):
 
         async def run(self):
             # Determine if the parking spot is vacant based on the sonar value
-            is_vacant = self.sonar_value > 100  # Adjust the threshold according to your specific needs
+            is_vacant = self.sonar_value > 30  # Adjust the threshold according to your specific needs
             # Create a message to inform the parking spot manager about the vacancy status
             msg = Message(to=self.owner.manager_jid)  # Replace with the appropriate recipient
             msg.body = "Vacant" if is_vacant else "Occupied"
@@ -56,7 +56,7 @@ class ParkingSpotModule(Agent):
                     random_step = random.randrange(1, 5)
                     current_bid = int(msg.body.split()[-1])
                     new_bid = current_bid + random_step  # Increase the bid by 1. Adjust as needed.
-                    if self.owner.cash >= current_bid:
+                    if self.owner.cash >= new_bid & new_bid <= self.owner.private_value:
                         bid_msg = Message(to=self.owner.manager_jid)
                         bid_msg.body = f"Bid {new_bid}"
                         await self.send(bid_msg)
@@ -67,8 +67,10 @@ class ParkingSpotModule(Agent):
                         self.owner.cash -= int(winner_bid)
                         print(f"Updated cash ({winner_jid}: {self.owner.cash}")
 
+    async def setup(self):
+        bid_behaviour = self.BidBehaviour(self)
+        self.add_behaviour(bid_behaviour)
+
     async def execute_behaviour(self, sonar_value: int):
         inform_behaviour = self.InformBehaviour(self, sonar_value)
-        bid_behaviour = self.BidBehaviour(self)
         self.add_behaviour(inform_behaviour)
-        self.add_behaviour(bid_behaviour)

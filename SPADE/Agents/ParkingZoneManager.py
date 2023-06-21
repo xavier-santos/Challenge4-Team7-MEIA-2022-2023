@@ -1,5 +1,5 @@
 import random
-from asyncio import asyncio
+import asyncio
 from datetime import datetime
 
 from spade.agent import Agent
@@ -15,6 +15,32 @@ class ParkingZoneManager(Agent):
             self.last_bid_time = None
             self.current_high_bid = 0
             self.current_winner = None
+            self.bid_count = 0
+
+        async def end_auction(self):
+            # Mark the auction as ended
+            self.owner.auction_in_progress = False
+            print("Auction ended.")
+
+            # Notify the bidders about the end of the auction
+            winner_bid = self.current_high_bid
+            winner_jid = self.current_winner
+            await self.notify_bidders(winner_bid, winner_jid)
+
+        async def start_auction(self, vacant_spots):
+            self.owner.auction_in_progress = True
+            initial_bid = random.randrange(10, 25)  # Set the initial bid value
+            for jid in vacant_spots:
+                start_msg = Message(to=jid)
+                start_msg.body = f"AuctionStart {initial_bid}"
+                await self.send(start_msg)
+
+        async def notify_bidders(self, winner_bid, winner_jid):
+            for spot, vacancy in self.owner.parking_spots.items():
+                if vacancy == "Vacant":
+                    end_msg = Message(to=f"{spot}@xavi.lan")
+                    end_msg.body = f"AuctionEnd {winner_bid} {winner_jid}"
+                    await self.send(end_msg)
 
         async def run(self):
             # Wait for incoming messages from ParkingSpotModuleController agents
@@ -22,15 +48,12 @@ class ParkingZoneManager(Agent):
 
             if msg:
                 sender_jid = str(msg.sender)
-                vacant_spots = self.owner.find_vacant_parking_spot()
+                vacant_spots = self.owner.find_vacant_parking_spots()
 
                 if msg.body == "Request":
                     # start auction
                     if vacant_spots:
-                        await self.owner.start_auction(vacant_spots)
-                        await asyncio.sleep(5)  # Wait for 5 seconds
-                        if self.owner.auction_in_progress:
-                            await self.owner.end_auction()  # End the auction if it's not already ended
+                        await self.start_auction(vacant_spots)
                     # response = self.owner.find_vacant_parking_spot()
                     # response_msg = Message(to=sender_jid)
                     # response_msg.body = response
@@ -52,6 +75,11 @@ class ParkingZoneManager(Agent):
                             start_msg = Message(to=jid)
                             start_msg.body = f"BidRequest {new_bid}"
                             await self.send(start_msg)
+
+                    self.bid_count += 1
+                    if self.bid_count >= 3:
+                        await self.end_auction()
+                        self.bid_count = 0
                 else:  # TODO: ADD MESSAGE TYPE?
                     # Process the message and update the parking spot status
                     vacancy_status = msg.body
@@ -76,14 +104,6 @@ class ParkingZoneManager(Agent):
         listen_behaviour = self.ListenBehaviour(self)
         self.add_behaviour(listen_behaviour)
 
-    async def start_auction(self, vacant_spots):
-        self.auction_in_progress = True
-        initial_bid = random.randrange(10, 25)  # Set the initial bid value
-        for jid in vacant_spots:
-            start_msg = Message(to=jid)
-            start_msg.body = f"AuctionStart {initial_bid}"
-            await self.send(start_msg)
-
     def update_parking_spot_status(self, parking_module, vacancy_status):
         # Update the parking spot status in the manager's internal data structure (dictionary)
         self.parking_spots[parking_module] = vacancy_status
@@ -106,20 +126,3 @@ class ParkingZoneManager(Agent):
             if vacancy == "Vacant":
                 vacant_spots.append(spot)
         return vacant_spots
-
-    async def end_auction(self):
-        # Mark the auction as ended
-        self.auction_in_progress = False
-        print("Auction ended.")
-
-        # Notify the bidders about the end of the auction
-        winner_bid = self.current_high_bid
-        winner_jid = self.current_winner
-        await self.notify_bidders(winner_bid, winner_jid)
-
-    async def notify_bidders(self, winner_bid, winner_jid):
-        for spot, vacancy in self.parking_spots.items():
-            if vacancy == "Vacant":
-                end_msg = Message(to=spot)
-                end_msg.body = f"AuctionEnd {winner_bid} {winner_jid}"
-                await self.send(end_msg)

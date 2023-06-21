@@ -11,6 +11,14 @@ app = FastAPI()
 
 agents = {}  # to keep track of created agents
 
+AVAILABLE_ENVIRONMENTS = ["Outdoor", "Indoor", "Both", "Indoor-Preferred", "Outdoor-Preferred"]
+AVAILABLE_PRICING_OPTIONS = ["Low", "Medium", "High"]
+
+
+@app.get("/parking_preferences")
+async def get_available_parking_preferences():
+    return {"Environments": AVAILABLE_ENVIRONMENTS, "Pricing": AVAILABLE_PRICING_OPTIONS}
+
 
 @app.post("/parking_module/{pmodule_id}/{zone_id}")
 async def create_spot(pmodule_id: str, zone_id: str):
@@ -27,7 +35,6 @@ class ExecuteBehaviourRequest(BaseModel):
 @app.post("/parking_module/{pmodule_id}")
 async def send_sonar(pmodule_id: str, request: ExecuteBehaviourRequest):
     sonar_value = request.sonar_value
-    print("potato")
     if pmodule_id in agents:
         asyncio.create_task(agents[pmodule_id].execute_behaviour(sonar_value))
         return {"Agent": pmodule_id, "Behaviour": "OneShotBehaviour Executed"}
@@ -52,17 +59,17 @@ async def create_zone(manager_id: str):
 
 
 @app.get("/driver/{driver_id}")
-async def execute_behaviour(driver_id: str):
+async def execute_behaviour(driver_id: str, lat: float, lon: float, environment: str, pricing: str):
     if driver_id in agents:
         asyncio.create_task(agents[driver_id].execute_behaviour())
-        return {"Agent": driver_id, "Behaviour": "OneShotBehaviour Executed"}
+        return {"zone": "Parking Zone A", "module_id": "PM1", "lat": 41.17801960832598, "lon": -8.607875426074333}
     else:
         return {"Error": "No such agent exists"}
 
 
 @app.post("/driver/{driver_id}")
 async def create_driver(driver_id: str):
-    driver = Driver(f"{driver_id}@xavi.lan", "agent_password")
+    driver = Driver(f"{driver_id}@xavi.lan", "agent_password", "pm1@xavi.lan")
     await driver.start()
     agents[driver_id] = driver
     return {"Agent": driver_id, "Status": "Created"}

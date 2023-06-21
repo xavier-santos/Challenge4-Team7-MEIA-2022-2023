@@ -26,7 +26,7 @@ class Driver(Agent):
             # Send the request message
             await self.send(msg)
             # Wait for the response
-            response_msg = await self.receive(timeout=5)  # Adjust the timeout as per your needs
+            response_msg = await self.receive(timeout=15)  # Adjust the timeout as per your needs
             if response_msg:
                 # Process the response
                 parking_zone_manager_id = response_msg.body
@@ -35,7 +35,7 @@ class Driver(Agent):
                 msg = Message(to=parking_zone_manager_id)
                 msg.body = "Request"
                 await self.send(msg)
-                response_msg = await self.receive(timeout=5)  # Adjust the timeout as per your needs
+                response_msg = await self.receive(timeout=15)  # Adjust the timeout as per your needs
                 if response_msg:
                     # Process the response
                     # Process the response
