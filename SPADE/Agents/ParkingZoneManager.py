@@ -1,21 +1,23 @@
 import random
 import asyncio
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 
+# needs to know and inform its environment and pricing with price per hour as well as low medium high when receive negotiation request
 
 class ParkingZoneManager(Agent):
     class ListenBehaviour(CyclicBehaviour):
         def __init__(self, owner):
             super().__init__()
             self.owner = owner
-            self.last_bid_time = None
             self.current_high_bid = 0
             self.current_winner = None
-            self.bid_count = 0
+            self.timestamp = datetime.now()
+            self.number_of_poors = 0
 
         async def end_auction(self):
             # Mark the auction as ended
@@ -25,10 +27,13 @@ class ParkingZoneManager(Agent):
             # Notify the bidders about the end of the auction
             winner_bid = self.current_high_bid
             winner_jid = self.current_winner
+            self.current_high_bid = 0
+            self.current_winner = ""
             await self.notify_bidders(winner_bid, winner_jid)
 
         async def start_auction(self, vacant_spots):
             self.owner.auction_in_progress = True
+            self.timestamp = datetime.now()
             initial_bid = random.randrange(10, 25)  # Set the initial bid value
             for jid in vacant_spots:
                 start_msg = Message(to=jid)
@@ -36,11 +41,10 @@ class ParkingZoneManager(Agent):
                 await self.send(start_msg)
 
         async def notify_bidders(self, winner_bid, winner_jid):
-            for spot, vacancy in self.owner.parking_spots.items():
-                if vacancy == "Vacant":
-                    end_msg = Message(to=f"{spot}@xavi.lan")
-                    end_msg.body = f"AuctionEnd {winner_bid} {winner_jid}"
-                    await self.send(end_msg)
+            for spot in self.owner.find_vacant_parking_spots():
+                end_msg = Message(to=spot)
+                end_msg.body = f"AuctionEnd {winner_bid} {winner_jid}"
+                await self.send(end_msg)
 
         async def run(self):
             # Wait for incoming messages from ParkingSpotModuleController agents
@@ -60,6 +64,8 @@ class ParkingZoneManager(Agent):
                     # await self.send(response_msg)
                 elif "Bid" in msg.body:
                     # Process the bid
+                    if not self.owner.auction_in_progress:
+                        return
                     current_bid = int(msg.body.split()[-1])
                     print(f"Received bid {current_bid} from {sender_jid}")
 
@@ -67,7 +73,6 @@ class ParkingZoneManager(Agent):
                     if current_bid > self.current_high_bid:
                         self.current_high_bid = current_bid
                         self.current_winner = sender_jid
-                        self.last_bid_time = datetime.now()
 
                         # Increase the bid and ask for new bids
                         new_bid = current_bid + 1
@@ -76,10 +81,17 @@ class ParkingZoneManager(Agent):
                             start_msg.body = f"BidRequest {new_bid}"
                             await self.send(start_msg)
 
-                    self.bid_count += 1
-                    if self.bid_count >= 3:
+                    current_time = datetime.now()
+                    if current_time >= self.timestamp + timedelta(seconds=2):
                         await self.end_auction()
-                        self.bid_count = 0
+                elif "Poor" in msg.body:
+                    if not self.owner.auction_in_progress:
+                        return
+                    print(f"{sender_jid} is Poor!!!!")
+                    self.number_of_poors += 1
+                    if self.number_of_poors >= len(vacant_spots):
+                        print("No more money in the cash...")
+                        await self.end_auction()
                 else:  # TODO: ADD MESSAGE TYPE?
                     # Process the message and update the parking spot status
                     vacancy_status = msg.body
@@ -89,6 +101,8 @@ class ParkingZoneManager(Agent):
 
                     # Create a message to inform the parking spot manager about the vacancy status
                     info = Message(to=self.owner.manager_jid)  # Replace with the appropriate recipient
+
+                    #send environment information
                     info.body = str(self.owner.count_vacant_parking_spots())
 
                     # Send the message

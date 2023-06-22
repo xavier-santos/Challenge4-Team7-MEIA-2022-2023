@@ -45,6 +45,7 @@ class Driver(Agent):
                     if self.owner.assigned_spot_queue is not None:
                         self.owner.assigned_spot_queue.put(parking_spot_id)
 
+    # "Request $environment $pricing $lat $lon"
     async def execute_behaviour(self):
         request_behaviour = self.RequestParkingBehaviour(self)
         self.add_behaviour(request_behaviour)

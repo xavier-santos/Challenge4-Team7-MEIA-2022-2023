@@ -1,5 +1,6 @@
 import asyncio
 import random
+import time
 
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, OneShotBehaviour
@@ -57,15 +58,21 @@ class ParkingSpotModule(Agent):
                     current_bid = int(msg.body.split()[-1])
                     new_bid = current_bid + random_step  # Increase the bid by 1. Adjust as needed.
                     if self.owner.cash >= new_bid & new_bid <= self.owner.private_value:
+                        time.sleep(0.5)
                         bid_msg = Message(to=self.owner.manager_jid)
                         bid_msg.body = f"Bid {new_bid}"
                         await self.send(bid_msg)
+                    else:
+                        bid_msg = Message(to=self.owner.manager_jid)
+                        bid_msg.body = "Poor"
+                        await self.send(bid_msg)
+
                 elif "AuctionEnd" in msg.body:
                     # Auction end logic here (e.g., perform actions after the auction ends)
                     winner_bid, winner_jid = msg.body.split()[1:]
-                    if self.owner.jid == winner_jid:
+                    if f"{self.owner.jid.localpart}@{self.owner.jid.domain}" == winner_jid:
                         self.owner.cash -= int(winner_bid)
-                        print(f"Updated cash ({winner_jid}: {self.owner.cash}")
+                        print(f"Updated cash ({winner_jid}: {self.owner.cash})")
 
     async def setup(self):
         bid_behaviour = self.BidBehaviour(self)
