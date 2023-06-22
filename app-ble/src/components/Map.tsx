@@ -6,6 +6,8 @@ import { CoordProps, LocationCoordProps, MapProps } from '../types/types';
 import { styles } from '../styles/styles';
 import { PERMISSIONS, request } from 'react-native-permissions';
 import Geolocation from '@react-native-community/geolocation';
+import config from '../../config.json';
+
 
 export function Map({ markers, polylineCoords }: MapProps) {
   const [currentLocation, setCurrentLocation] = useState<CoordProps | null>(null)
@@ -35,7 +37,7 @@ export function Map({ markers, polylineCoords }: MapProps) {
 
 useEffect(()=> {
   if(polylineCoords){
-    const apiUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${polylineCoords.latitude},${polylineCoords.longitude}&key=AIzaSyCqCbXx00VMtS5WY2c7wsoB5oeJ8tyF6C8`;
+    const apiUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${polylineCoords.latitude},${polylineCoords.longitude}&key=${config.api_key}`;
     
     fetch(apiUrl)
     .then(response => response.json())
