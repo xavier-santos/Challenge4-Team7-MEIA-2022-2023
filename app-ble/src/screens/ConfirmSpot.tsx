@@ -8,8 +8,8 @@ import { useRoute } from '@react-navigation/native';
 import { styles } from '../styles/styles';
 
 export function ConfirmSpot(props) {
-  const route = useRoute()
-  const { result } = route.params
+  const route = useRoute();
+  const result = route.params;
   
   const bottomSheetModalRef = useRef(null);
   const snapPoints = useMemo(() => ["30%"], []);
@@ -24,8 +24,8 @@ export function ConfirmSpot(props) {
 
   const markers: LocationCoordProps[] = [{
       id: 'P',
-      latitude: result.latitude,
-      longitude: result.longitude
+      latitude: result.lat,
+      longitude: result.lon
   }]
 
   return (
@@ -43,7 +43,7 @@ export function ConfirmSpot(props) {
                 <View style={styles.selectSpotWrapper}>
                   <View style={styles.selectedSpot}>
                     <Text style={{fontSize: 20}}>This will be your parking spot:</Text>
-                    <Text>Hourly Cost: {result.price}</Text>
+                    <Text>Hourly Cost: {result.princing}</Text>
                     <Text>Environment: {result.environment}</Text>
                   </View>
                   <Button title="Confirm Spot" onPress={handleConfirm} />

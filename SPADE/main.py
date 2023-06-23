@@ -22,7 +22,7 @@ async def get_available_parking_preferences():
 
 @app.post("/parking_module/{pmodule_id}/{zone_id}")
 async def create_spot(pmodule_id: str, zone_id: str):
-    spot = ParkingSpotModule(f"{pmodule_id}@xavi.lan", "agent_password", f"{zone_id}@xavi.lan")
+    spot = ParkingSpotModule(f"{pmodule_id}@isep.lan", "agent_password", f"{zone_id}@isep.lan")
     await spot.start()
     agents[pmodule_id] = spot
     return {"Agent": pmodule_id, "Status": "Created"}
@@ -44,7 +44,7 @@ async def send_sonar(pmodule_id: str, request: ExecuteBehaviourRequest):
 
 @app.post("/parking_zone/{zone_id}/{manager_id}")
 async def create_zone(zone_id: str, manager_id: str):
-    zone = ParkingZoneManager(f"{zone_id}@xavi.lan", "agent_password", f"{manager_id}@xavi.lan")
+    zone = ParkingZoneManager(f"{zone_id}@isep.lan", "agent_password", f"{manager_id}@isep.lan")
     await zone.start()
     agents[zone_id] = zone
     return {"Agent": zone_id, "Status": "Created"}
@@ -52,7 +52,7 @@ async def create_zone(zone_id: str, manager_id: str):
 
 @app.post("/parking_manager/{manager_id}")
 async def create_zone(manager_id: str):
-    manager = ParkingManager(f"{manager_id}@xavi.lan", "agent_password")
+    manager = ParkingManager(f"{manager_id}@isep.lan", "agent_password")
     await manager.start()
     agents[manager_id] = manager
     return {"Agent": manager_id, "Status": "Created"}
@@ -62,14 +62,15 @@ async def create_zone(manager_id: str):
 async def execute_behaviour(driver_id: str, lat: float, lon: float, environment: str, pricing: str):
     if driver_id in agents:
         asyncio.create_task(agents[driver_id].execute_behaviour())
-        return {"zone": "Parking Zone A", "module_id": "PM1", "lat": 41.17801960832598, "lon": -8.607875426074333}
+        return {"zone": "Parking Zone A", "module_id": "PM1", "lat": 41.17801960832598, "lon": -8.607875426074333,
+                "princing": 200, "environment": 'Outside'}
     else:
         return {"Error": "No such agent exists"}
 
 
 @app.post("/driver/{driver_id}")
 async def create_driver(driver_id: str):
-    driver = Driver(f"{driver_id}@xavi.lan", "agent_password", "pm1@xavi.lan")
+    driver = Driver(f"{driver_id}@isep.lan", "agent_password", "pm1@isep.lan")
     await driver.start()
     agents[driver_id] = driver
     return {"Agent": driver_id, "Status": "Created"}

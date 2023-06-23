@@ -13,12 +13,12 @@ export const styles = StyleSheet.create({
         justifyContent: 'space-between'
     },
     selectSpotTitle: {
-        marginVertical: 60,
-        paddingBottom: 20, 
+        marginVertical: 30,
+        paddingBottom: 10, 
         borderBottomWidth: 1, 
         borderBottomColor: 'gray', 
         flex: 0, 
-        gap: 10
+        gap: 30
     },
      map: {
     width: Dimensions.get('window').width,
@@ -63,5 +63,11 @@ export const styles = StyleSheet.create({
       flex: 1,
       gap: 10,
       alignItems: 'center'
+    },
+    loading: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', 
     }
   });
