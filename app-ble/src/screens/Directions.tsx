@@ -9,7 +9,7 @@ import { LocationCoordProps } from '../types/types';
 import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-export function Directions()  {
+export function Directions(props)  {
   const route = useRoute()
   const { markers } = route.params
   const [hasArrived, setHasArrived] = useState(false);
@@ -36,6 +36,7 @@ export function Directions()  {
   useEffect(() => {
     if (distance != -1 && distance < 0.09) {
       setHasArrived(true);
+      props.navigation.navigate('arrived')
     }
   }, [distance]);
 
@@ -60,12 +61,6 @@ export function Directions()  {
                   {!hasArrived && 
                     <Text style={{fontSize: 18, color: 'black'}}>Distance to spot: {distance}</Text>
                   } 
-                  {hasArrived && 
-                    <View>
-                      <FontAwesome name="check" size={32} color="green" />
-                      <Text>You've arrived!</Text>
-                    </View>
-                  }   
                   </View>
                 </BottomSheetModal>
             </View>
