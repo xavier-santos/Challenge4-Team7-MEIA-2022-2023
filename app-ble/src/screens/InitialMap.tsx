@@ -9,22 +9,22 @@ import { styles } from '../styles/styles';
 export function InitialMap(props) {
   
   const parkings: LocationCoordProps[] = [{
-    id: 'a',
-    latitude: 41.17796324211171, 
-    longitude: -8.60891994096156
+    id: 'B',
+    latitude: 41.177634781456376, 
+    longitude: -8.607730238333016
   },
    {
-    id: 'b',
-    latitude: 41.17786497596217, 
-    longitude: -8.608226428692205
+    id: 'J',
+    latitude: 41.17818356765914, 
+    longitude: -8.607616313266
    }, {
-    id: 'c',
-    latitude: 41.17832324568314, 
-    longitude: -8.608156691263558
+    id: 'F',
+    latitude: 41.17891198923872, 
+    longitude: -8.607990280085794
    }, {
-    id: 'd',
-    latitude: 41.1788158315874, 
-    longitude: -8.608623395593737
+    id: 'H',
+    latitude: 41.17784057682124, 
+    longitude: -8.608542903811065
    }]
 
    const ItemSeparatorView = () => {

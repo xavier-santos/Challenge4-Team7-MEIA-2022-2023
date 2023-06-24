@@ -5,6 +5,7 @@ import { InitialMap } from '../screens/InitialMap';
 import { SelectSpot } from '../screens/SelectSpot';
 import { ConfirmSpot } from '../screens/ConfirmSpot';
 import { Directions } from '../screens/Directions';
+import { Arrived } from '../screens/Arrived';
 
 const { Navigator, Screen } = createNativeStackNavigator();
 
@@ -19,6 +20,8 @@ export function AppRoutes() {
             component={ConfirmSpot}/>
             <Screen name="directions"
             component={Directions}/>
+            <Screen name="arrived"
+            component={Arrived}/>
         </Navigator>
     );
 }
