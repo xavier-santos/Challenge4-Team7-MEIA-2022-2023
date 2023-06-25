@@ -20,7 +20,6 @@ export function Directions(props)  {
     longitude: markers[0].longitude
   }
   const {requestPermissions, scanForPeripherals, distance} = useBLE();
-  const [distanceFromSpot, setDistanceFromSpot] = useState(distance); // or however you get your distance
 
   const scanForDevices = () => {
     requestPermissions(isGranted => {
@@ -34,7 +33,7 @@ export function Directions(props)  {
   const snapPoints = useMemo(() => ["10%"], []);
 
   useEffect(() => {
-    if (distance != -1 && distance < 0.09) {
+    if (!hasArrived && distance != -1 && distance < 0.09) {
       setHasArrived(true);
       props.navigation.navigate('arrived')
     }

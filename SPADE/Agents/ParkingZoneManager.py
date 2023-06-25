@@ -113,12 +113,11 @@ class ParkingZoneManager(Agent):
                     client.on_connect = self.on_connect
                     client.connect("localhost", 1883)
                     client.loop_start()
-                    client.loop_stop()
-                    client.disconnect()
 
                     # send environment information
-                    info.body = f"{self.vacant_spaces} {self.owner.lat} {self.owner.lon}" \
-                                f"{self.owner.price_hour} {self.owner.environment}"
+                    info.body = f"{self.owner.count_vacant_parking_spots()} {self.owner.lat} {self.owner.lon}" \
+                                f" {self.owner.price_hour} {self.owner.environment}"
+
                     # Send the message
                     await self.send(info)
 
