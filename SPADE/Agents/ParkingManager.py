@@ -1,6 +1,7 @@
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
+import paho.mqtt.client as mqtt
 
 
 class ParkingManager(Agent):
@@ -49,6 +50,32 @@ class ParkingManager(Agent):
 
             # Print the updated vacant space count for the parking spot manager
             print(f"Parking zone manager {parking_manager} has {vacant_spaces} vacant spaces")
+
+            def on_connect(client, userdata, flags, rc):
+                print("Client connected with result code: " + str(rc))
+
+                # Publish a message when the client is connected (replace with your desired topic and message)
+                client.publish("display_value", {vacant_spaces})
+
+            # Create an MQTT client instance
+            client = mqtt.Client()
+
+            # Set the callback function
+            client.on_connect = on_connect
+
+            # Connect to the MQTT broker (replace the broker address and port with your own)
+            client.connect("localhost", 1883)
+
+            # Start the MQTT loop to process incoming and outgoing messages
+            client.loop_start()
+
+            # Continue with your program logic or sleep to keep the script running
+            while True:
+                pass
+
+            # Disconnect from the MQTT broker
+            client.loop_stop()
+            client.disconnect()
 
         def find_vacant_parking_spot(self, environment=None, pricing=None, lat=None, lon=None):
             # Implement your logic to find a vacant parking spot
