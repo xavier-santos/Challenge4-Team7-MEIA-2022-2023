@@ -43,8 +43,9 @@ async def send_sonar(pmodule_id: str, request: ExecuteBehaviourRequest):
 
 
 @app.post("/parking_zone/{zone_id}/{manager_id}")
-async def create_zone(zone_id: str, manager_id: str):
-    zone = ParkingZoneManager(f"{zone_id}@isep.lan", "agent_password", f"{manager_id}@isep.lan")
+async def create_zone(zone_id: str, manager_id: str, lat: float, lon: float, price_hour: float, environment: str):
+    zone = ParkingZoneManager(f"{zone_id}@isep.lan", "agent_password", f"{manager_id}@isep.lan", lat, lon, price_hour,
+                              environment)
     await zone.start()
     agents[zone_id] = zone
     return {"Agent": zone_id, "Status": "Created"}

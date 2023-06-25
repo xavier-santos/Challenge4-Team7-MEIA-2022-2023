@@ -27,10 +27,14 @@ class ParkingManager(Agent):
                     response_msg.body = response
                     await self.send(response_msg)
                 else:
-                    # Process the message and extract the number of vacant spaces
-                    vacant_spaces = int(msg.body)  # Assuming the message body contains the number of vacant spaces as an integer
-                    # Update the city's internal data structure with the number of vacant spaces for the parking spot manager
-                    self.update_vacant_spaces(sender_jid, vacant_spaces)
+                    # Process the message and extract the number of vacant spaces and additional information
+                    vacant_spaces, lat, lon, price_hour, environment = msg.body.split()
+                    # Convert the necessary values to the desired types
+                    vacant_spaces = int(vacant_spaces)
+                    lat = float(lat)
+                    lon = float(lon)
+                    price_hour = float(price_hour)
+                    self.update_vacant_spaces(sender_jid, vacant_spaces, environment, lat, lon, price_hour)
 
         def extract_request_params(self, request_msg):
             # Extract environment, pricing, latitude, and longitude information from the request message
@@ -42,14 +46,17 @@ class ParkingManager(Agent):
             lon = float(params[3]) if len(params) >= 4 else None
             return environment, pricing, lat, lon
 
-        def update_vacant_spaces(self, parking_manager, vacant_spaces):
+        def update_vacant_spaces(self, parking_zone_manager_jid, vacant_spaces, environment, lat, lon, price_hour):
             # Update the city's internal data structure (dictionary, list, etc.) with the number of vacant spaces for the parking spot manager
             # You can choose an appropriate data structure based on your requirements
             # For example, you can use a dictionary with parking manager names as keys and vacant space counts as values
-            self.owner.vacant_spaces[parking_manager] = vacant_spaces
+
+            parking_zone_manager = (environment, lat, lon, price_hour)
+
+            self.owner.vacant_spaces[parking_zone_manager] = vacant_spaces
 
             # Print the updated vacant space count for the parking spot manager
-            print(f"Parking zone manager {parking_manager} has {vacant_spaces} vacant spaces")
+            print(f"Parking zone manager {parking_zone_manager_jid} has {vacant_spaces} vacant spaces")
 
             def on_connect(client, userdata, flags, rc):
                 print("Client connected with result code: " + str(rc))
@@ -83,13 +90,14 @@ class ParkingManager(Agent):
             matched_spots = []
 
             # sends message to all to know its environment etc
-
-
-            for spot, spots in self.owner.vacant_spaces.items():
-                if spots > 0:
-                    spot_environment, spot_pricing, spot_lat, spot_lon = spot.split()
-                    score = self.calculate_score(spot_environment, spot_pricing, spot_lat, spot_lon, environment, pricing, lat, lon)
-                    matched_spots.append((spot, score))
+            for parking_zone_manager, vacant_spots in self.owner.vacant_spaces.items():
+                if vacant_spots > 0:
+                    parking_zone_environment, parking_zone_pricing, parking_zone_lat, parking_zone_lon =\
+                        parking_zone_manager
+                    score = self.calculate_score(parking_zone_environment, parking_zone_pricing, parking_zone_lat,
+                                                 parking_zone_lon, environment,
+                                                 pricing, lat, lon)
+                    matched_spots.append((parking_zone_manager, score))
 
             if matched_spots:
                 # Sort the matched spots based on the score in descending order
@@ -98,10 +106,16 @@ class ParkingManager(Agent):
 
             return None
 
-        def calculate_score(self, spot_environment, spot_pricing, spot_lat, spot_lon, client_environment, client_pricing, client_lat, client_lon):
+        def calculate_score(self, spot_environment, spot_pricing, spot_lat, spot_lon, client_environment,
+                            client_pricing, client_lat, client_lon):
             # Calculate the score for a spot based on its environment, pricing, and proximity to the client's location
-            environment_weight = 3 if spot_environment == client_environment else 2 if spot_environment.endswith("-Preferred") else 1
-            pricing_weight = 3 if spot_pricing == client_pricing else 2 if spot_pricing == "Low" and client_pricing == "High" else 1
+            environment_weight = 3 if spot_environment == client_environment else 2 if spot_environment.endswith(
+                "-Preferred") else 1
+            pricing_values = {"Low": 0.25, "Medium": 1.0, "High": float('inf')}
+
+            spot_pricing_value = pricing_values.get(spot_pricing, float('inf'))
+            client_pricing_value = pricing_values.get(client_pricing, float('inf'))
+            pricing_weight = 3 if spot_pricing_value < 0.25 and client_pricing_value < 0.25 else 2 if spot_pricing_value < 1.0 and client_pricing_value < 1.0 else 1
             proximity_weight = self.calculate_proximity_weight(spot_lat, spot_lon, client_lat, client_lon)
             return environment_weight + pricing_weight + proximity_weight
 

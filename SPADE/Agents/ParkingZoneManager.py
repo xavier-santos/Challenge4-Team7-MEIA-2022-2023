@@ -7,6 +7,7 @@ from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 
+
 # needs to know and inform its environment and pricing with price per hour as well as low medium high when receive negotiation request
 
 class ParkingZoneManager(Agent):
@@ -102,17 +103,21 @@ class ParkingZoneManager(Agent):
                     # Create a message to inform the parking spot manager about the vacancy status
                     info = Message(to=self.owner.manager_jid)  # Replace with the appropriate recipient
 
-                    #send environment information
-                    info.body = str(self.owner.count_vacant_parking_spots())
-
+                    # send environment information
+                    info.body = f"{self.owner.count_vacant_parking_spots()} {self.owner.lat} {self.owner.lon}" \
+                                f"{self.owner.price_hour} {self.owner.environment}"
                     # Send the message
                     await self.send(info)
 
-    def __init__(self, jid: str, password: str, manager_jid, verify_security: bool = False):
+    def __init__(self, jid: str, password: str, manager_jid, lat: float, lon: float, price_hour: float, environment: str, verify_security: bool = False):
         super().__init__(jid, password, verify_security)
         self.auction_in_progress = False
         self.parking_spots = {}  # Dictionary to store parking spot status
         self.manager_jid = manager_jid
+        self.lat = lat
+        self.lon = lon
+        self.price_hour = price_hour
+        self.environment = environment
 
     async def setup(self):
         listen_behaviour = self.ListenBehaviour(self)
