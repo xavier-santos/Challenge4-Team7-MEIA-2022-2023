@@ -18,12 +18,10 @@ class ParkingZoneManager(Agent):
             self.timestamp = datetime.now()
             self.number_of_poors = 0
             self.vacant_spaces = 0
-            client = mqtt.Client()
-            client.on_connect = self.on_connect
-            client.connect("localhost", 1883)
-            client.loop_start()
-            client.loop_stop()
-            client.disconnect()
+            self.client = mqtt.Client()
+            self.client.on_connect = self.on_connect
+            self.client.connect("localhost", 1883)
+            self.client.loop_start()
 
         async def end_auction(self):
             # Mark the auction as ended
@@ -100,21 +98,26 @@ class ParkingZoneManager(Agent):
                         await self.end_auction()
                 else:  # TODO: ADD MESSAGE TYPE?
                     # Process the message and update the parking spot status
-                    vacancy_status = msg.body
+                    message_parts = msg.body.split()
+                    vacancy_status = message_parts[0]
+
+                    if len(message_parts) > 1:
+                        try:
+                            number = int(message_parts[1])
+                            self.send_price(0, number * self.owner.price_hour)
+                        except ValueError:
+                            pass
 
                     # Update the parking spot status using the manager's reference
                     self.owner.update_parking_spot_status(sender_jid, vacancy_status)
+                    if vacancy_status == "Occupied":
+                        self.send_price(1)
                     self.vacant_spaces = self.owner.count_vacant_parking_spots()
 
                     # Create a message to inform the parking spot manager about the vacancy status
                     info = Message(to=self.owner.manager_jid)  # Replace with the appropriate recipient
 
-                    client = mqtt.Client()
-                    client.on_connect = self.on_connect
-                    client.connect("localhost", 1883)
-                    client.loop_start()
-                    client.loop_stop()
-                    client.disconnect()
+                    self.send_display()
 
                     # send environment information
                     info.body = f"{self.vacant_spaces} {self.owner.lat} {self.owner.lon}" \
@@ -122,10 +125,11 @@ class ParkingZoneManager(Agent):
                     # Send the message
                     await self.send(info)
 
-        def on_connect(self, client, rc):
-            print("Client connected with result code: " + str(rc))
-            # Publish a message when the client is connected (replace with your desired topic and message)
-            client.publish(f"{self.owner.pz_id}_display_value", self.vacant_spaces)
+        def send_display(self):
+            self.client.publish(f"{self.owner.pz_id}_display_value", self.vacant_spaces)
+
+        def send_price(self, is_parked, price = ""):
+            self.client.publish("parked", f"{is_parked} {price}")
 
     def __init__(self, jid: str, password: str, manager_jid, lat: float, lon: float, price_hour: float, environment: str
                  , pz_id: str, verify_security: bool = False):

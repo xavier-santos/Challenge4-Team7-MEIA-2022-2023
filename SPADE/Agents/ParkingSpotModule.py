@@ -37,9 +37,9 @@ class ParkingSpotModule(Agent):
             if is_vacant:
                 if self.owner.is_vacant != is_vacant:
                     duration = datetime.now() - self.owner.time_arrived
-                    duration_hours = duration.total_seconds() / 3600
+                    duration_minutes = duration.total_seconds() / 60
                     self.owner.time_arrived = None
-                    msg.body = f"Vacant ${duration_hours}"
+                    msg.body = f"Vacant ${duration_minutes}"
 
                 msg.body = "Vacant"
             else:
