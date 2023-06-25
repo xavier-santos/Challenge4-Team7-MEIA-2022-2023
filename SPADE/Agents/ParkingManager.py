@@ -50,7 +50,7 @@ class ParkingManager(Agent):
             # You can choose an appropriate data structure based on your requirements
             # For example, you can use a dictionary with parking manager names as keys and vacant space counts as values
 
-            parking_zone_manager = (environment, lat, lon, price_hour)
+            parking_zone_manager = (parking_zone_manager_jid, environment, lat, lon, price_hour)
 
             self.owner.vacant_spaces[parking_zone_manager] = vacant_spaces
 
@@ -65,7 +65,7 @@ class ParkingManager(Agent):
             # sends message to all to know its environment etc
             for parking_zone_manager, vacant_spots in self.owner.vacant_spaces.items():
                 if vacant_spots > 0:
-                    parking_zone_environment, parking_zone_pricing, parking_zone_lat, parking_zone_lon =\
+                    parking_zone_manager_jid, parking_zone_environment, parking_zone_pricing, parking_zone_lat, parking_zone_lon =\
                         parking_zone_manager
                     score = self.calculate_score(parking_zone_environment, parking_zone_pricing, parking_zone_lat,
                                                  parking_zone_lon, environment,
@@ -75,7 +75,7 @@ class ParkingManager(Agent):
             if matched_spots:
                 # Sort the matched spots based on the score in descending order
                 matched_spots.sort(key=lambda x: x[1], reverse=True)
-                return matched_spots[0][0]
+                return matched_spots[0][0][0]
 
             return None
 

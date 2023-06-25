@@ -43,7 +43,7 @@ export function ConfirmSpot(props) {
                 <View style={styles.selectSpotWrapper}>
                   <View style={styles.selectedSpot}>
                     <Text style={{fontSize: 20}}>This will be your parking spot:</Text>
-                    <Text>Hourly Cost: {result.princing}</Text>
+                    <Text>Hourly Cost: {result.pricing}</Text>
                     <Text>Environment: {result.environment}</Text>
                   </View>
                   <Button title="Confirm Spot" onPress={handleConfirm} />

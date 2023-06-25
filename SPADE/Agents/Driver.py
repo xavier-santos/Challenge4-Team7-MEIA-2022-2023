@@ -49,12 +49,12 @@ class Driver(Agent):
                 response_msg = await self.receive(timeout=15)  # Adjust the timeout as per your needs
                 if response_msg:
                     # Process the response
-                    parking_spot_id = msg.body.split()[0]
-                    self.owner.parking_pricing = msg.body.split()[1]
-                    self.owner.parking_env = msg.body.split()[2]
-                    self.owner.parking_lat = msg.body.split()[3]
-                    self.owner.parking_lon = msg.body.split()[4]
-                    self.owner.parking_zone_jid = str(msg.sender)
+                    parking_spot_id = response_msg.body.split()[0]
+                    self.owner.parking_pricing = response_msg.body.split()[1]
+                    self.owner.parking_env = response_msg.body.split()[2]
+                    self.owner.parking_lat = response_msg.body.split()[3]
+                    self.owner.parking_lon = response_msg.body.split()[4]
+                    self.owner.parking_zone_jid = str(response_msg.sender)
                     self.owner.parking_spot_jid = parking_spot_id
                     self.owner.has_park = True
                     # Put the assigned spot in the queue
@@ -62,6 +62,6 @@ class Driver(Agent):
                         self.owner.assigned_spot_queue.put(parking_spot_id)
 
     # "Request $environment $pricing $lat $lon"
-    async def execute_behaviour(self, lat: float, lon: float, environment: str, price: str):
+    async def execute_behaviour2(self, lat: float, lon: float, environment: str, price: str):
         request_behaviour = self.RequestParkingBehaviour(self, lat, lon, environment, price)
         self.add_behaviour(request_behaviour)

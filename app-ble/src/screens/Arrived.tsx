@@ -10,6 +10,7 @@ export function Arrived() {
 
     const [parked, setParked] = useState(false);
     const [left, setLeft] = useState(false);
+    const [price, setPrice] = useState(0);
 
     init({
       size: 10000,
@@ -21,7 +22,7 @@ export function Arrived() {
     });
 
     function onConnect() {
-      client.subscribe('display_value', { qos: 0 });
+      client.subscribe('parked', { qos: 0 });
       console.log("onConnect");
     }
 
@@ -33,10 +34,14 @@ export function Arrived() {
 
     function onMessageArrived(message) {
       console.log("onMessageArrived:" + message.payloadString);
-      if (message.payloadString === '0'){
+      const messageMqtt = message.payloadString.split(" ")
+      const parked = messageMqtt[0]
+      const price =  messageMqtt[1]
+      if (parked === '1'){
             setParked(true)
-      } else if(message.payloadString === '1'){
+      } else if (parked === '0'){
             setLeft(true)
+            setPrice(price)
       }
     }
 
@@ -44,7 +49,7 @@ export function Arrived() {
         console.log('Connect failed!', err);
     }
 
-    const client = new Paho.MQTT.Client(config.ip_adress, 9001, 'display_value');
+    const client = new Paho.MQTT.Client(config.ip_adress, 9001, 'parked');
     client.onConnectionLost = onConnectionLost;
     client.onMessageArrived = onMessageArrived
     client.connect({ onSuccess: onConnect, useSSL: false, timeout: 300, onFailure: onFailure });

@@ -71,13 +71,14 @@ async def create_zone(manager_id: str):
 @app.get("/driver/{driver_id}")
 async def execute_behaviour(driver_id: str, lat: float, lon: float, environment: str, pricing: str):
     if driver_id in agents:
-        asyncio.create_task(agents[driver_id].execute_behaviour(lat, lon, environment, pricing))
+        asyncio.create_task(agents[driver_id].execute_behaviour2(lat, lon, environment, pricing))
         while not agents[driver_id].has_park:
-            time.sleep(0.1)
+            await asyncio.sleep(0.1)
+
         return {"zone": agents[driver_id].parking_zone_jid, "module_id": agents[driver_id].parking_spot_jid,
-                "lat": agents[driver_id].parking_lat,
-                "lon": agents[driver_id].parking_lon,
-                "pricing": agents[driver_id].parking_pricing, "environment": agents[driver_id].parking_env}
+                "lat": float(agents[driver_id].parking_lat),
+                "lon": float(agents[driver_id].parking_lon),
+                "pricing": float(agents[driver_id].parking_pricing), "environment": agents[driver_id].parking_env}
     else:
         return {"Error": "No such agent exists"}
 

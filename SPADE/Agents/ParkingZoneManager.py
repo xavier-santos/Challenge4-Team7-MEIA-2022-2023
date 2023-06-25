@@ -19,9 +19,7 @@ class ParkingZoneManager(Agent):
             self.number_of_poors = 0
             self.vacant_spaces = 0
             self.client = mqtt.Client()
-            self.client.on_connect = self.on_connect
             self.client.connect("localhost", 1883)
-            self.client.loop_start()
             self.driver = ""
             self.current_winner_lat = ""
             self.current_winner_lon = ""
@@ -109,7 +107,7 @@ class ParkingZoneManager(Agent):
 
                     if len(message_parts) > 1:
                         try:
-                            number = int(message_parts[1])
+                            number = float(message_parts[1])
                             self.send_price(0, number * self.owner.price_hour)
                         except ValueError:
                             pass
@@ -127,7 +125,7 @@ class ParkingZoneManager(Agent):
 
                     # send environment information
                     info.body = f"{self.vacant_spaces} {self.owner.lat} {self.owner.lon}" \
-                                f"{self.owner.price_hour} {self.owner.environment}"
+                                f" {self.owner.price_hour} {self.owner.environment}"
                     # Send the message
                     await self.send(info)
 
