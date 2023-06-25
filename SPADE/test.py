@@ -1,13 +1,7 @@
 from pydantic import BaseModel
 from fastapi import FastAPI
-import asyncio
-import time
 import random
 import paho.mqtt.client as mqtt
-from Agents.Driver import Driver
-from Agents.ParkingManager import ParkingManager
-from Agents.ParkingSpotModule import ParkingSpotModule
-from Agents.ParkingZoneManager import ParkingZoneManager
 
 app = FastAPI()
 
@@ -15,6 +9,7 @@ broker_address = "localhost"
 broker_port = 1883
 
 topic = "pz1_display_value"
+topic2 = "pz2_display_value"
 
 client = mqtt.Client()
 
@@ -47,10 +42,12 @@ async def send_sonar(pmodule_id: str, request: ExecuteBehaviourRequest):
     sonar_value = request.sonar_value
     print(f"Parking Id Received: {pmodule_id} ")
     print(f"Sonar Value: {sonar_value} ")
-    client.publish(topic, f"8")
+    client.publish(topic, f"{random.randint(0, 9)}")
+    client.publish(topic2, f"{random.randint(0, 9)}")
 
 
 if __name__ == "__main__":
     client.publish(topic, f"{random.randint(0, 9)}")
+    client.publish(topic2, f"{random.randint(0, 9)}")
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
