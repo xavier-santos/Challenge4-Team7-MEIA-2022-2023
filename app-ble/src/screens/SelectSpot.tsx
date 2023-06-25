@@ -7,7 +7,7 @@ import axios from 'axios';
 import { LoadingComponent } from '../components/LoadingComponent';
 import config from '../../config.json'
 
-const url = `${config.ip_adress}:8000`
+const url = `http://${config.ip_adress}:8000`
 
 enum Price {
   Low = '$',
