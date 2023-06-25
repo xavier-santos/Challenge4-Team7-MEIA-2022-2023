@@ -13,8 +13,7 @@ class ParkingManager(Agent):
         AVAILABLE_PRICING_OPTIONS = ["Low", "Medium", "High"]
 
         async def run(self):
-            # Wait for incoming messages from ParkingSpotManager agents
-            msg = await self.receive(timeout=5)  # Adjust the timeout as per your needs
+            msg = await self.receive(timeout=5)
 
             if msg:
                 sender_jid = str(msg.sender)
@@ -27,8 +26,7 @@ class ParkingManager(Agent):
                     await self.send(response_msg)
                 else:
                     # Process the message and extract the number of vacant spaces
-                    vacant_spaces = int(msg.body)  # Assuming the message body contains the number of vacant spaces as an integer
-                    # Update the city's internal data structure with the number of vacant spaces for the parking spot manager
+                    vacant_spaces = int(msg.body)
                     self.update_vacant_spaces(sender_jid, vacant_spaces)
 
         def extract_request_params(self, request_msg):
@@ -42,21 +40,14 @@ class ParkingManager(Agent):
             return environment, pricing, lat, lon
 
         def update_vacant_spaces(self, parking_manager, vacant_spaces):
-            # Update the city's internal data structure (dictionary, list, etc.) with the number of vacant spaces for the parking spot manager
-            # You can choose an appropriate data structure based on your requirements
-            # For example, you can use a dictionary with parking manager names as keys and vacant space counts as values
             self.owner.vacant_spaces[parking_manager] = vacant_spaces
 
-            # Print the updated vacant space count for the parking spot manager
             print(f"Parking zone manager {parking_manager} has {vacant_spaces} vacant spaces")
 
         def find_vacant_parking_spot(self, environment=None, pricing=None, lat=None, lon=None):
-            # Implement your logic to find a vacant parking spot
-            # Example: Return the closest vacant spot found based on environment, pricing, and location
             matched_spots = []
 
             # sends message to all to know its environment etc
-
 
             for spot, spots in self.owner.vacant_spaces.items():
                 if spots > 0:
@@ -65,21 +56,18 @@ class ParkingManager(Agent):
                     matched_spots.append((spot, score))
 
             if matched_spots:
-                # Sort the matched spots based on the score in descending order
                 matched_spots.sort(key=lambda x: x[1], reverse=True)
                 return matched_spots[0][0]
 
             return None
 
         def calculate_score(self, spot_environment, spot_pricing, spot_lat, spot_lon, client_environment, client_pricing, client_lat, client_lon):
-            # Calculate the score for a spot based on its environment, pricing, and proximity to the client's location
             environment_weight = 3 if spot_environment == client_environment else 2 if spot_environment.endswith("-Preferred") else 1
             pricing_weight = 3 if spot_pricing == client_pricing else 2 if spot_pricing == "Low" and client_pricing == "High" else 1
             proximity_weight = self.calculate_proximity_weight(spot_lat, spot_lon, client_lat, client_lon)
             return environment_weight + pricing_weight + proximity_weight
 
         def calculate_proximity_weight(self, spot_lat, spot_lon, client_lat, client_lon):
-            # Calculate the proximity weight based on the distance between the spot and the client's location
             if spot_lat is not None and spot_lon is not None and client_lat is not None and client_lon is not None:
                 distance = self.calculate_distance(spot_lat, spot_lon, client_lat, client_lon)
                 if distance <= 0.1:  # 100 meters
@@ -100,20 +88,15 @@ class ParkingManager(Agent):
                 return 0
 
         def calculate_distance(self, lat1, lon1, lat2, lon2):
-            # Calculate the distance between two locations using a suitable formula (e.g., Haversine formula)
-            # Example implementation (Haversine formula):
             from math import radians, sin, cos, sqrt, atan2
 
-            # Convert degrees to radians
             lat1_rad = radians(lat1)
             lon1_rad = radians(lon1)
             lat2_rad = radians(lat2)
             lon2_rad = radians(lon2)
 
-            # Earth's radius in kilometers
             earth_radius = 6371.0
 
-            # Haversine formula
             dlon = lon2_rad - lon1_rad
             dlat = lat2_rad - lat1_rad
             a = sin(dlat / 2) ** 2 + cos(lat1_rad) * cos(lat2_rad) * sin(dlon / 2) ** 2

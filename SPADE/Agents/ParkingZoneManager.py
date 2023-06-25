@@ -7,7 +7,9 @@ from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 
-# needs to know and inform its environment and pricing with price per hour as well as low medium high when receive negotiation request
+# needs to know and inform its environment and pricing with price per
+# hour as well as low medium high when receive negotiation request
+
 
 class ParkingZoneManager(Agent):
     class ListenBehaviour(CyclicBehaviour):
@@ -92,7 +94,7 @@ class ParkingZoneManager(Agent):
                     if self.number_of_poors >= len(vacant_spots):
                         print("No more money in the cash...")
                         await self.end_auction()
-                else:  # TODO: ADD MESSAGE TYPE?
+                else:
                     # Process the message and update the parking spot status
                     vacancy_status = msg.body
 
@@ -100,19 +102,28 @@ class ParkingZoneManager(Agent):
                     self.owner.update_parking_spot_status(sender_jid, vacancy_status)
 
                     # Create a message to inform the parking spot manager about the vacancy status
-                    info = Message(to=self.owner.manager_jid)  # Replace with the appropriate recipient
+                    info = Message(to=self.owner.manager_jid)
 
-                    #send environment information
+                    # send environment information
                     info.body = str(self.owner.count_vacant_parking_spots())
 
                     # Send the message
                     await self.send(info)
 
-    def __init__(self, jid: str, password: str, manager_jid, verify_security: bool = False):
+                    info = Message(to=self.owner.lcd_id)
+
+                    # send environment information
+                    info.body = str(self.owner.count_vacant_parking_spots())
+
+                    # Send the message
+                    await self.send(info)
+
+    def __init__(self, jid: str, password: str, manager_jid, id: str, verify_security: bool = False):
         super().__init__(jid, password, verify_security)
         self.auction_in_progress = False
         self.parking_spots = {}  # Dictionary to store parking spot status
         self.manager_jid = manager_jid
+        self.lcd_id = f"{id}_lcd@xavi.lan"
 
     async def setup(self):
         listen_behaviour = self.ListenBehaviour(self)
