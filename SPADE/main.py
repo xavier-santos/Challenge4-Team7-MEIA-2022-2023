@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from fastapi import FastAPI
 import asyncio
+import time
 
 from Agents.Driver import Driver
 from Agents.ParkingManager import ParkingManager
@@ -45,7 +46,7 @@ async def send_sonar(pmodule_id: str, request: ExecuteBehaviourRequest):
 @app.post("/parking_zone/{zone_id}/{manager_id}")
 async def create_zone(zone_id: str, manager_id: str, lat: float, lon: float, price_hour: float, environment: str):
     zone = ParkingZoneManager(f"{zone_id}@isep.lan", "agent_password", f"{manager_id}@isep.lan", lat, lon, price_hour,
-                              environment)
+                              environment, zone_id)
     await zone.start()
     agents[zone_id] = zone
     return {"Agent": zone_id, "Status": "Created"}
@@ -63,8 +64,11 @@ async def create_zone(manager_id: str):
 async def execute_behaviour(driver_id: str, lat: float, lon: float, environment: str, pricing: str):
     if driver_id in agents:
         asyncio.create_task(agents[driver_id].execute_behaviour(lat, lon, environment, pricing))
-        return {"zone": "Parking Zone A", "module_id": "PM1", "lat": 41.17801960832598, "lon": -8.607875426074333,
-                "princing": 200, "environment": 'Outside'}
+        while not agents[driver_id].has_park:
+            time.sleep(0.1)
+        return {"zone": "Parking Zone A", "module_id": agents[driver_id].parking_spot_jid, "lat": 41.17801960832598,
+                "lon": -8.607875426074333,
+                "pricing": 200, "environment": 'Outside'}
     else:
         return {"Error": "No such agent exists"}
 

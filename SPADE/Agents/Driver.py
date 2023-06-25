@@ -9,6 +9,8 @@ class Driver(Agent):
         super().__init__(jid, password)
         self.parking_manager_jid = parking_manager_jid
         self.assigned_spot_queue = None
+        self.has_park = False
+        self.parking_spot_jid = ""
 
     def set_assigned_spot_queue(self, assigned_spot_queue):
         self.assigned_spot_queue = assigned_spot_queue
@@ -44,6 +46,7 @@ class Driver(Agent):
                     # Process the response
                     parking_spot_id = response_msg.body
                     self.owner.parking_spot_jid = parking_spot_id
+                    self.owner.has_park = True
                     # Put the assigned spot in the queue
                     if self.owner.assigned_spot_queue is not None:
                         self.owner.assigned_spot_queue.put(parking_spot_id)

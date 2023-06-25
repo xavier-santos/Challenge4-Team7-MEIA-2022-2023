@@ -2,7 +2,7 @@ import random
 import asyncio
 import time
 from datetime import datetime, timedelta
-
+import paho.mqtt.client as mqtt
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
@@ -19,6 +19,13 @@ class ParkingZoneManager(Agent):
             self.current_winner = None
             self.timestamp = datetime.now()
             self.number_of_poors = 0
+            self.vacant_spaces = 0
+            client = mqtt.Client()
+            client.on_connect = self.on_connect
+            client.connect("localhost", 1883)
+            client.loop_start()
+            client.loop_stop()
+            client.disconnect()
 
         async def end_auction(self):
             # Mark the auction as ended
@@ -99,17 +106,31 @@ class ParkingZoneManager(Agent):
 
                     # Update the parking spot status using the manager's reference
                     self.owner.update_parking_spot_status(sender_jid, vacancy_status)
+                    self.vacant_spaces = self.owner.count_vacant_parking_spots()
 
                     # Create a message to inform the parking spot manager about the vacancy status
                     info = Message(to=self.owner.manager_jid)  # Replace with the appropriate recipient
 
+                    client = mqtt.Client()
+                    client.on_connect = self.on_connect
+                    client.connect("localhost", 1883)
+                    client.loop_start()
+                    client.loop_stop()
+                    client.disconnect()
+
                     # send environment information
-                    info.body = f"{self.owner.count_vacant_parking_spots()} {self.owner.lat} {self.owner.lon}" \
+                    info.body = f"{self.vacant_spaces} {self.owner.lat} {self.owner.lon}" \
                                 f"{self.owner.price_hour} {self.owner.environment}"
                     # Send the message
                     await self.send(info)
 
-    def __init__(self, jid: str, password: str, manager_jid, lat: float, lon: float, price_hour: float, environment: str, verify_security: bool = False):
+        def on_connect(self, client, rc):
+            print("Client connected with result code: " + str(rc))
+            # Publish a message when the client is connected (replace with your desired topic and message)
+            client.publish(f"{self.owner.pz_id}_display_value", self.vacant_spaces)
+
+    def __init__(self, jid: str, password: str, manager_jid, lat: float, lon: float, price_hour: float, environment: str
+                 , pz_id: str, verify_security: bool = False):
         super().__init__(jid, password, verify_security)
         self.auction_in_progress = False
         self.parking_spots = {}  # Dictionary to store parking spot status
@@ -118,6 +139,7 @@ class ParkingZoneManager(Agent):
         self.lon = lon
         self.price_hour = price_hour
         self.environment = environment
+        self.pz_id = pz_id
 
     async def setup(self):
         listen_behaviour = self.ListenBehaviour(self)
