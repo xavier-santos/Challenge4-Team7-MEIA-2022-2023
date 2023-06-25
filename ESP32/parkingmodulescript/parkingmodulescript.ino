@@ -27,6 +27,9 @@ unsigned long lastTime = 0;
 // Set timer to 5 seconds (5000)
 unsigned long timerDelay = 5000;
 
+float latitude = 0.0;
+float longitude = 0.0;
+
 void setup() {
   Serial.begin(115200);
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
@@ -45,6 +48,35 @@ void setup() {
   Serial.println("\nConnected to the WiFi network");
   Serial.print("Local ESP32 IP: ");
   Serial.println(WiFi.localIP());
+
+  std::string endpoint = server_ip + std::string("/") + manager_id;
+  WiFiClient client;
+  HTTPClient http;
+  StaticJsonDocument<200> doc;
+  doc["lat"] = latitude;   // Replace latitude with your actual value
+  doc["lon"] = longitude;  // Replace longitude with your actual value
+  String payload;
+  serializeJson(doc, payload);
+
+  if (http.begin(client, server_ip)) {
+    http.addHeader("Content-Type", "application/json");
+    int httpResponseCode = http.POST(payload);
+
+    if (httpResponseCode > 0) {
+      Serial.print("HTTP Response code: ");
+      Serial.println(httpResponseCode);
+      String response = http.getString();
+      Serial.println(response);
+    } else {
+      Serial.print("Error code: ");
+      Serial.println(httpResponseCode);
+    }
+
+    // Free resources
+    http.end();
+  } else {
+    Serial.println("Unable to connect to the server");
+  }
 }
 
 void sendDataToServer(int distance) {

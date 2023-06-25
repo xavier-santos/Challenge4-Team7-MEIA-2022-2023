@@ -10,13 +10,15 @@ from spade.message import Message
 
 class ParkingSpotModule(Agent):
 
-    def __init__(self, agent_jid, agent_password, manager_jid):
+    def __init__(self, agent_jid, agent_password, manager_jid, lat, lon):
         super().__init__(jid=agent_jid, password=agent_password)
         self.manager_jid = manager_jid
         self.cash = random.randrange(100, 200)
         self.private_value = None
         self.time_arrived = None
         self.is_vacant = True
+        self.lat = lat
+        self.lon = lon
 
     class InformBehaviour(OneShotBehaviour):
 

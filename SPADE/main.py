@@ -21,9 +21,17 @@ async def get_available_parking_preferences():
     return {"Environments": AVAILABLE_ENVIRONMENTS, "Pricing": AVAILABLE_PRICING_OPTIONS}
 
 
+class SpotData(BaseModel):
+    lat: float
+    lon: float
+
+
 @app.post("/parking_module/{pmodule_id}/{zone_id}")
-async def create_spot(pmodule_id: str, zone_id: str):
-    spot = ParkingSpotModule(f"{pmodule_id}@isep.lan", "agent_password", f"{zone_id}@isep.lan")
+async def create_spot(pmodule_id: str, zone_id: str, spot_data: SpotData):
+    lat = spot_data.lat
+    lon = spot_data.lon
+
+    spot = ParkingSpotModule(f"{pmodule_id}@isep.lan", "agent_password", f"{zone_id}@isep.lan", lat, lon)
     await spot.start()
     agents[pmodule_id] = spot
     return {"Agent": pmodule_id, "Status": "Created"}
