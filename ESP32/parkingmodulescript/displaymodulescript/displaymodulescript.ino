@@ -6,8 +6,6 @@ const char* ssid = "iPhone de Xavier (2)";
 const char* password = "pequena132";
 const char* mqttServer = "172.20.10.6";
 const int mqttPort = 1883;
-const char* mqttUser = "mqtt_username";
-const char* mqttPassword = "mqtt_password";
 const char* mqttTopic = "pz1_display_value";
 
 WiFiClient espClient;
@@ -16,13 +14,25 @@ SevSeg sevseg;
 
 void setup() {
   // Connect to Wi-Fi
-  Serial.print("IM ALIVE");
+  Serial.begin(115200);
+  Serial.println("IM ALIVE");
+  WiFi.mode(WIFI_STA); // Optional
   WiFi.begin(ssid, password);
+  Serial.println("\nConnecting");
+
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
     Serial.print(".");
+    delay(100);
   }
   Serial.println("WiFi connected");
+
+  IPAddress ip;
+  if (WiFi.hostByName(mqttServer, ip)) {
+    Serial.print("Ping successful. IP address: ");
+    Serial.println(ip);
+  } else {
+    Serial.println("Ping failed");
+  }
 
   // Connect to MQTT Broker
   client.setServer(mqttServer, mqttPort);
@@ -42,14 +52,7 @@ void loop() {
     reconnect();
   }
   client.loop();
-  
-  // Update the display
-  for (int i = 0; i < 10; i++) {
-    sevseg.setNumber(i);
-    sevseg.refreshDisplay();
-    delay(1000);
-  }
-}
+} 
 
 void callback(char* topic, byte* payload, unsigned int length) {
   // Convert the received payload to a string
@@ -60,6 +63,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (String(topic) == mqttTopic) {
     // Update the display with the received value
     int value = message.toInt();
+    Serial.println(message);
     sevseg.setNumber(value);
     sevseg.refreshDisplay();
   }
@@ -68,7 +72,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("ESP32Client", mqttUser, mqttPassword)) {
+    if (client.connect("ESP32Client")) {
       Serial.println("connected");
       client.subscribe(mqttTopic);
     } else {

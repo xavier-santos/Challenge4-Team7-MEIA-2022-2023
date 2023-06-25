@@ -50,6 +50,7 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   std::string endpoint = server_ip + std::string("/") + manager_id;
+  const char* endpoint_char = endpoint.c_str();
   WiFiClient client;
   HTTPClient http;
   StaticJsonDocument<200> doc;
@@ -58,7 +59,7 @@ void setup() {
   String payload;
   serializeJson(doc, payload);
 
-  if (http.begin(client, server_ip)) {
+  if (http.begin(client, endpoint_char)) {
     http.addHeader("Content-Type", "application/json");
     int httpResponseCode = http.POST(payload);
 
