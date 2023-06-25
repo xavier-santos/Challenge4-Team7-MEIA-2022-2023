@@ -22,6 +22,9 @@ class ParkingZoneManager(Agent):
             self.client.on_connect = self.on_connect
             self.client.connect("localhost", 1883)
             self.client.loop_start()
+            self.driver = ""
+            self.current_winner_lat = ""
+            self.current_winner_lon = ""
 
         async def end_auction(self):
             # Mark the auction as ended
@@ -34,6 +37,9 @@ class ParkingZoneManager(Agent):
             self.current_high_bid = 0
             self.current_winner = ""
             await self.notify_bidders(winner_bid, winner_jid)
+            response_msg = Message(to=self.driver)
+            response_msg.body = f"{winner_jid} {self.owner.price_hour} {self.owner.environment} {self.current_winner_lat} {self.current_winner_lon}"
+            await self.send(response_msg)
 
         async def start_auction(self, vacant_spots):
             self.owner.auction_in_progress = True
@@ -60,23 +66,23 @@ class ParkingZoneManager(Agent):
 
                 if msg.body == "Request":
                     # start auction
+                    self.driver = sender_jid
                     if vacant_spots:
                         await self.start_auction(vacant_spots)
                     # response = self.owner.find_vacant_parking_spot()
-                    # response_msg = Message(to=sender_jid)
-                    # response_msg.body = response
-                    # await self.send(response_msg)
                 elif "Bid" in msg.body:
                     # Process the bid
                     if not self.owner.auction_in_progress:
                         return
-                    current_bid = int(msg.body.split()[-1])
+                    current_bid = int(msg.body.split()[1])
                     print(f"Received bid {current_bid} from {sender_jid}")
 
                     # Check if the bid is higher than current high bid
                     if current_bid > self.current_high_bid:
                         self.current_high_bid = current_bid
                         self.current_winner = sender_jid
+                        self.current_winner_lat = msg.body.split()[2]
+                        self.current_winner_lon = msg.body.split()[3]
 
                         # Increase the bid and ask for new bids
                         new_bid = current_bid + 1
@@ -128,7 +134,7 @@ class ParkingZoneManager(Agent):
         def send_display(self):
             self.client.publish(f"{self.owner.pz_id}_display_value", self.vacant_spaces)
 
-        def send_price(self, is_parked, price = ""):
+        def send_price(self, is_parked, price=""):
             self.client.publish("parked", f"{is_parked} {price}")
 
     def __init__(self, jid: str, password: str, manager_jid, lat: float, lon: float, price_hour: float, environment: str

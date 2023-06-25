@@ -71,7 +71,7 @@ class ParkingSpotModule(Agent):
                     if self.owner.private_value > initial_bid:
                         # Send initial bid
                         bid_msg = Message(to=self.owner.manager_jid)
-                        bid_msg.body = f"Bid {initial_bid}"  # Here, 1 is the initial bid value. Adjust as needed.
+                        bid_msg.body = f"Bid {initial_bid} {self.owner.lat} {self.owner.lon}"  # Here, 1 is the initial bid value. Adjust as needed.
                         await self.send(bid_msg)
                 elif "BidRequest" in msg.body:
                     # Increase bid
@@ -81,7 +81,7 @@ class ParkingSpotModule(Agent):
                     if self.owner.cash >= new_bid & new_bid <= self.owner.private_value:
                         time.sleep(0.5)
                         bid_msg = Message(to=self.owner.manager_jid)
-                        bid_msg.body = f"Bid {new_bid}"
+                        bid_msg.body = f"Bid {new_bid} {self.owner.lat} {self.owner.lon}"
                         await self.send(bid_msg)
                     else:
                         bid_msg = Message(to=self.owner.manager_jid)

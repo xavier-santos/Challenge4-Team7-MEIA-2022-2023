@@ -11,6 +11,11 @@ class Driver(Agent):
         self.assigned_spot_queue = None
         self.has_park = False
         self.parking_spot_jid = ""
+        self.parking_env = ""
+        self.parking_pricing = ""
+        self.parking_zone_jid = ""
+        self.parking_lat = ""
+        self.parking_lon = ""
 
     def set_assigned_spot_queue(self, assigned_spot_queue):
         self.assigned_spot_queue = assigned_spot_queue
@@ -44,7 +49,12 @@ class Driver(Agent):
                 response_msg = await self.receive(timeout=15)  # Adjust the timeout as per your needs
                 if response_msg:
                     # Process the response
-                    parking_spot_id = response_msg.body
+                    parking_spot_id = msg.body.split()[0]
+                    self.owner.parking_pricing = msg.body.split()[1]
+                    self.owner.parking_env = msg.body.split()[2]
+                    self.owner.parking_lat = msg.body.split()[3]
+                    self.owner.parking_lon = msg.body.split()[4]
+                    self.owner.parking_zone_jid = str(msg.sender)
                     self.owner.parking_spot_jid = parking_spot_id
                     self.owner.has_park = True
                     # Put the assigned spot in the queue
