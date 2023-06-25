@@ -14,15 +14,19 @@ class Driver(Agent):
         self.assigned_spot_queue = assigned_spot_queue
 
     class RequestParkingBehaviour(OneShotBehaviour):
-        def __init__(self, owner):
+        def __init__(self, owner, lat, lon, environment, price):
             super().__init__()
             self.owner = owner
+            self.lat = lat
+            self.lon = lon
+            self.environment = environment
+            self.price = price
 
         async def run(self):
             # Create a request message
+            # Example: "Request Outdoor-Preferred Low 40.7128 -74.0060"
             msg = Message(to=self.owner.parking_manager_jid)
-            msg.body = "Request"
-
+            msg.body = f"Request {self.environment} {self.price} {self.lat} {self.lon}"
             # Send the request message
             await self.send(msg)
             # Wait for the response
@@ -38,7 +42,6 @@ class Driver(Agent):
                 response_msg = await self.receive(timeout=15)  # Adjust the timeout as per your needs
                 if response_msg:
                     # Process the response
-                    # Process the response
                     parking_spot_id = response_msg.body
                     self.owner.parking_spot_jid = parking_spot_id
                     # Put the assigned spot in the queue
@@ -46,6 +49,6 @@ class Driver(Agent):
                         self.owner.assigned_spot_queue.put(parking_spot_id)
 
     # "Request $environment $pricing $lat $lon"
-    async def execute_behaviour(self):
-        request_behaviour = self.RequestParkingBehaviour(self)
+    async def execute_behaviour(self, lat: float, lon: float, environment: str, price: str):
+        request_behaviour = self.RequestParkingBehaviour(self, lat, lon, environment, price)
         self.add_behaviour(request_behaviour)
