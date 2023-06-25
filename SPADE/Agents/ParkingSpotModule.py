@@ -1,7 +1,8 @@
-import asyncio
 import random
 import time
+from datetime import datetime
 
+from paho import mqtt
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, OneShotBehaviour
 from spade.message import Message
@@ -14,6 +15,8 @@ class ParkingSpotModule(Agent):
         self.manager_jid = manager_jid
         self.cash = random.randrange(100, 200)
         self.private_value = None
+        self.time_arrived = None
+        self.is_vacant = True
 
     class InformBehaviour(OneShotBehaviour):
 
@@ -22,12 +25,28 @@ class ParkingSpotModule(Agent):
             self.owner = owner
             self.sonar_value = sonar_value
 
+        #parked
+        #left valor
         async def run(self):
             # Determine if the parking spot is vacant based on the sonar value
             is_vacant = self.sonar_value > 30  # Adjust the threshold according to your specific needs
-            # Create a message to inform the parking spot manager about the vacancy status
             msg = Message(to=self.owner.manager_jid)  # Replace with the appropriate recipient
-            msg.body = "Vacant" if is_vacant else "Occupied"
+            # Create a message to inform the parking spot manager about the vacancy status
+            if is_vacant:
+                if self.owner.is_vacant != is_vacant:
+                    duration = datetime.now() - self.owner.time_arrived
+                    duration_hours = duration.total_seconds() / 3600
+                    self.owner.time_arrived = None
+                    msg.body = f"Vacant ${duration_hours}"
+
+                msg.body = "Vacant"
+            else:
+                if self.owner.is_vacant != is_vacant:
+                    self.owner.time_arrived = datetime.now()
+
+                msg.body = "Occupied"
+
+            self.owner.is_vacant = is_vacant
             # Send the message
             await self.send(msg)
 
