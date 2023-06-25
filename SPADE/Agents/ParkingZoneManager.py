@@ -8,8 +8,6 @@ from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 
 
-# needs to know and inform its environment and pricing with price per hour as well as low medium high when receive negotiation request
-
 class ParkingZoneManager(Agent):
     class ListenBehaviour(CyclicBehaviour):
         def __init__(self, owner):

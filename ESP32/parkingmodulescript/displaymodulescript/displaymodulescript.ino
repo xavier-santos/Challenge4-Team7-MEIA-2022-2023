@@ -8,7 +8,7 @@ const char* mqttServer = "172.20.10.6";
 const int mqttPort = 1883;
 const char* mqttUser = "mqtt_username";
 const char* mqttPassword = "mqtt_password";
-const char* mqttTopic = "display_value";
+const char* mqttTopic = "pz1_display_value";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
